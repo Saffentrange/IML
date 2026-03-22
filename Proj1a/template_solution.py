@@ -25,6 +25,7 @@ def fit(X, y, lam):
     ----------
     w: array of floats: dim = (13,), optimal parameters of ridge regression
     """
+    # TEST
     weights = np.zeros((13,))
     # TODO: Enter your code here
     assert weights.shape == (13,)
