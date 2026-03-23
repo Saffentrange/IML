@@ -28,6 +28,15 @@ def fit(X, y, lam):
     # TEST
     weights = np.zeros((13,))
     # TODO: Enter your code here
+    # This calculates the ridge regression according to the given formula
+    """
+    n = 13
+    sum = 0
+    for i in range(1,n):
+        t1 = (y[i] - w.T * x[i])**2
+        t2 = t1 + lam * np.linalg.norm()
+    """
+    res = np.linalg.inv(X.T @ X + lam) @ X.T @ y
     assert weights.shape == (13,)
     return weights
 
