@@ -131,7 +131,7 @@ def training(train_data_input, train_data_label, **kwargs):
     # Also consider that you might not want to use the entire dataset for
     # training alone
     # (batch_size needs to be changed)
-    batch_size = 100
+    batch_size = 64
     dataset = TensorDataset(train_data_input, train_data_label)
     # Consider the shuffle parameter and other parameters of the DataLoader
     # class (see
@@ -176,9 +176,22 @@ class Model(nn.Module):
         self.fc = nn.Linear(784, 784)
 
         # added stuff
-        self.activation = torch.nn.ReLU()
-        self.linear1 = torch.nn.Linear(784, 784)
-        self.LogSoftmax = torch.nn.LogSoftmax()
+        self.encoder = nn.Sequential(    
+            nn.Unflatten(1, (1, 28, 28)),                                                   # formula: (input_size - kernel_size + 2*padding)/stride + 1        (1, 28, 28)
+            nn.Conv2d(in_channels=1, out_channels=16, kernel_size=5, stride=1),             # (28-5+0)/1 + 1 = 24       (16, 24, 24)
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),                                                    # 24/2 = 14                 (16, 12, 12)
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5, stride=1),            # (12-5+0)/1 + 1 = 8        (32, 8, 8)
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2)                                                     # 8/2 = 4                   (32, 4, 4)
+        )
+
+        self.decoder = nn.Sequential(                                                                           # formula: (input_size - 1) * stride - 2*padding + dilation * (kernel_size - 1) + output_padding + 1
+            nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=5, stride=2, padding=2, dilation=2, output_padding=1),     # (4 - 1) * 2 - 0 + 4 + 1 + 1 = 12      (16, 12, 12)
+            nn.ReLU(),                                                                      
+            nn.ConvTranspose2d(in_channels=16, out_channels=1, kernel_size=5, stride=2, padding=2, dilation=2, output_padding=1),      # (12 - 1) * 2 - 0 + 4 + 1 + 1 = 28     (1, 28, 28)
+            nn.Sigmoid()
+        )
 
     def forward(self, x):
         """
@@ -194,9 +207,9 @@ class Model(nn.Module):
         x = F.relu(x)
 
         # added stuff
-        x = self.activation(x)
-        x = self.linear1(x)
-        x = self.LogSoftmax(x)
+        #x = x.view(-1, 1, 28, 28)
+        x= self.encoder(x)
+        x = self.decoder(x)
 
         # Reshape the image to the original shape
         x = x.view(x.shape[0], 1, 28, 28)
