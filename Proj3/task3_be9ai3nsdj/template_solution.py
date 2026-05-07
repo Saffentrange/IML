@@ -71,8 +71,15 @@ def load_data(**kwargs):
     # label images to train your model. 
     # Replace the two placholder lines below (which currently just copy the
     # training data) with your own implementation.
-    train_data_label = train_data.clone()
+    # what was here
+    # train_data_label = train_data.clone()
+    # train_data_input = train_data.clone()
+
     train_data_input = train_data.clone()
+    train_data_input[:, :, 10:18, 10:18] = 0  # masked image is the input
+    train_data_label = train_data[:, :, :, :]   # clean image is the lable
+    
+
 
     # Visualize the training data if needed
     # Set to False if you don't want to save the images
