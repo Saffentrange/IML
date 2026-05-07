@@ -121,27 +121,29 @@ def training(train_data_input, train_data_label, **kwargs):
 
     # TODO: Dummy criterion - change this to the correct loss function
     # https://pytorch.org/docs/stable/nn.html#loss-functions
-    criterion = lambda x, y: torch.mean((x))
+    # criterion = lambda x, y: torch.mean((x))
+    criterion = nn.CrossEntropyLoss()
     # TODO: Dummy optimizer - change this to a more suitable optimizer
-    optimizer = torch.optim.SGD(model.parameters())
+    # optimizer = torch.optim.SGD(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # TODO: Correctly setup the dataloader - the below is just a placeholder
     # Also consider that you might not want to use the entire dataset for
     # training alone
     # (batch_size needs to be changed)
-    batch_size = 1
+    batch_size = 100
     dataset = TensorDataset(train_data_input, train_data_label)
     # Consider the shuffle parameter and other parameters of the DataLoader
     # class (see
     # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader)
-    data_loader = DataLoader(dataset, batch_size=batch_size)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     # Training loop
     # TODO: Modify the training loop in case you need to
 
     # TODO: The value of n_epochs is just a placeholder and likely needs to be
     # changed
-    n_epochs = 1
+    n_epochs = 3
 
     for epoch in range(n_epochs):
         for x, y in tqdm(
@@ -173,6 +175,11 @@ class Model(nn.Module):
         super().__init__()
         self.fc = nn.Linear(784, 784)
 
+        # added stuff
+        self.activation = torch.nn.ReLU()
+        self.linear1 = torch.nn.Linear(784, 784)
+        self.LogSoftmax = torch.nn.LogSoftmax()
+
     def forward(self, x):
         """
         The forward pass of the model.
@@ -185,6 +192,12 @@ class Model(nn.Module):
         x = x.view(x.shape[0], -1)
         x = self.fc(x)
         x = F.relu(x)
+
+        # added stuff
+        x = self.activation(x)
+        x = self.linear1(x)
+        x = self.LogSoftmax(x)
+
         # Reshape the image to the original shape
         x = x.view(x.shape[0], 1, 28, 28)
         return x
