@@ -85,7 +85,7 @@ def load_data(**kwargs):
 
     # Visualize the training data if needed
     # Set to False if you don't want to save the images
-    if True:
+    if False:
         # Create the output directory if it doesn't exist
         if not Path("train_image_output").exists():
             Path("train_image_output").mkdir()
@@ -124,16 +124,18 @@ def training(train_data_input, train_data_label, **kwargs):
     # TODO: Dummy criterion - change this to the correct loss function
     # https://pytorch.org/docs/stable/nn.html#loss-functions
     # criterion = lambda x, y: torch.mean((x))
-    criterion = nn.MSELoss()
+    # criterion = nn.MSELoss()
+    criterion = nn.BCELoss()
+
     # TODO: Dummy optimizer - change this to a more suitable optimizer
     # optimizer = torch.optim.SGD(model.parameters())
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0003, weight_decay=1e-4)
 
     # TODO: Correctly setup the dataloader - the below is just a placeholder
     # Also consider that you might not want to use the entire dataset for
     # training alone
     # (batch_size needs to be changed)
-    batch_size = 64
+    batch_size = 128
     dataset = TensorDataset(train_data_input, train_data_label)
     # Consider the shuffle parameter and other parameters of the DataLoader
     # class (see
@@ -145,7 +147,7 @@ def training(train_data_input, train_data_label, **kwargs):
 
     # TODO: The value of n_epochs is just a placeholder and likely needs to be
     # changed
-    n_epochs = 6
+    n_epochs = 4
 
     for epoch in range(n_epochs):
         for x, y in tqdm(
@@ -182,18 +184,18 @@ class Model(nn.Module):
             nn.Unflatten(1, (1, 28, 28)),                                                   # formula: (input_size - kernel_size + 2*padding)/stride + 1        (1, 28, 28)
             nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=2, padding=1),  # (28-3+2)/1 + 1 = 28          (16, 28, 28)
             nn.BatchNorm2d(32),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2),
             #nn.MaxPool2d(kernel_size=2),                                                    # 28/2 = 14                    (16, 14, 14)
             nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1),            # (14-3+2)/1 + 1 = 14          (32, 14, 14)
             nn.BatchNorm2d(64),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2),
             #nn.MaxPool2d(kernel_size=2)                                                  # 14/2 = 7                     (32, 7, 7)
         )
 
         self.decoder = nn.Sequential(                                                                   # formula: (input_size - 1) * stride - 2*padding + dilation * (kernel_size - 1) + output_padding + 1
             nn.ConvTranspose2d(in_channels=64, out_channels=32, kernel_size=4, stride=2, padding=1),     # (7 - 1) * 2 - 2 + 4 + 0 + 0 = 12      (16, 12, 12)
             nn.BatchNorm2d(32),
-            nn.ReLU(),                                                                      
+            nn.LeakyReLU(0.2),                                                                      
             nn.ConvTranspose2d(in_channels=32, out_channels=1, kernel_size=4, stride=2, padding=1),      # (14 - 1) * 2 - 2 + 4 + 0 + 0 = 28     (1, 28, 28)
             nn.Sigmoid()
             #nn.Upsample(scale_factor=2, mode='nearest'),
