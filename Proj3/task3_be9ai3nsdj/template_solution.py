@@ -80,6 +80,8 @@ def load_data(**kwargs):
     train_data_label = train_data[:, :, :, :]   # clean image is the lable
     
 
+    train_data_input = train_data_input.float()/255
+    train_data_label = train_data_label.float()/255
 
     # Visualize the training data if needed
     # Set to False if you don't want to save the images
@@ -122,7 +124,7 @@ def training(train_data_input, train_data_label, **kwargs):
     # TODO: Dummy criterion - change this to the correct loss function
     # https://pytorch.org/docs/stable/nn.html#loss-functions
     # criterion = lambda x, y: torch.mean((x))
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
     # TODO: Dummy optimizer - change this to a more suitable optimizer
     # optimizer = torch.optim.SGD(model.parameters())
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -143,7 +145,7 @@ def training(train_data_input, train_data_label, **kwargs):
 
     # TODO: The value of n_epochs is just a placeholder and likely needs to be
     # changed
-    n_epochs = 3
+    n_epochs = 6
 
     for epoch in range(n_epochs):
         for x, y in tqdm(
@@ -173,24 +175,31 @@ class Model(nn.Module):
         The constructor of the model.
         """
         super().__init__()
-        self.fc = nn.Linear(784, 784)
+        #self.fc = nn.Linear(784, 784)
 
         # added stuff
         self.encoder = nn.Sequential(    
             nn.Unflatten(1, (1, 28, 28)),                                                   # formula: (input_size - kernel_size + 2*padding)/stride + 1        (1, 28, 28)
-            nn.Conv2d(in_channels=1, out_channels=16, kernel_size=5, stride=1),             # (28-5+0)/1 + 1 = 24       (16, 24, 24)
+            nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=2, padding=1),  # (28-3+2)/1 + 1 = 28          (16, 28, 28)
+            nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),                                                    # 24/2 = 14                 (16, 12, 12)
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5, stride=1),            # (12-5+0)/1 + 1 = 8        (32, 8, 8)
+            #nn.MaxPool2d(kernel_size=2),                                                    # 28/2 = 14                    (16, 14, 14)
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1),            # (14-3+2)/1 + 1 = 14          (32, 14, 14)
+            nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2)                                                     # 8/2 = 4                   (32, 4, 4)
+            #nn.MaxPool2d(kernel_size=2)                                                  # 14/2 = 7                     (32, 7, 7)
         )
 
-        self.decoder = nn.Sequential(                                                                           # formula: (input_size - 1) * stride - 2*padding + dilation * (kernel_size - 1) + output_padding + 1
-            nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=5, stride=2, padding=2, dilation=2, output_padding=1),     # (4 - 1) * 2 - 0 + 4 + 1 + 1 = 12      (16, 12, 12)
+        self.decoder = nn.Sequential(                                                                   # formula: (input_size - 1) * stride - 2*padding + dilation * (kernel_size - 1) + output_padding + 1
+            nn.ConvTranspose2d(in_channels=64, out_channels=32, kernel_size=4, stride=2, padding=1),     # (7 - 1) * 2 - 2 + 4 + 0 + 0 = 12      (16, 12, 12)
+            nn.BatchNorm2d(32),
             nn.ReLU(),                                                                      
-            nn.ConvTranspose2d(in_channels=16, out_channels=1, kernel_size=5, stride=2, padding=2, dilation=2, output_padding=1),      # (12 - 1) * 2 - 0 + 4 + 1 + 1 = 28     (1, 28, 28)
+            nn.ConvTranspose2d(in_channels=32, out_channels=1, kernel_size=4, stride=2, padding=1),      # (14 - 1) * 2 - 2 + 4 + 0 + 0 = 28     (1, 28, 28)
             nn.Sigmoid()
+            #nn.Upsample(scale_factor=2, mode='nearest'),
+            #nn.Conv2d(32, 16, kernel_size=3, padding=1),
+            #nn.Upsample(scale_factor=2, mode='nearest'),
+            #nn.Conv2d(16, 1, kernel_size=3, padding=1)
         )
 
     def forward(self, x):
@@ -203,7 +212,7 @@ class Model(nn.Module):
         """
         # Flatten the image in the last two dimensions
         x = x.view(x.shape[0], -1)
-        x = self.fc(x)
+        #x = self.fc(x)
         x = F.relu(x)
 
         # added stuff
