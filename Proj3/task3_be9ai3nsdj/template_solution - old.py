@@ -129,7 +129,7 @@ def training(train_data_input, train_data_label, **kwargs):
 
     # TODO: Dummy optimizer - change this to a more suitable optimizer
     # optimizer = torch.optim.SGD(model.parameters())
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0003, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.00003, weight_decay=1e-5)
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.5)
 
@@ -190,38 +190,31 @@ class Model(nn.Module):
         """
         super().__init__()
         #self.fc = nn.Linear(784, 784)
-    
+
         # added stuff
-        self.encoder1 = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.2),
-            nn.MaxPool2d(2)
-        )
-
-        self.encoder2 = nn.Sequential(
-            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.2),
-            nn.MaxPool2d(2)
-        )
-
-        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.dec1 = nn.Sequential(
-            nn.Conv2d(in_channels=192, out_channels=64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.2)
-        )
-
-        self.up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.dec2 = nn.Sequential(
-            nn.Conv2d(in_channels=65, out_channels=32, kernel_size=3, padding=1),
+        self.encoder = nn.Sequential(    
+            #nn.Unflatten(1, (1, 28, 28)),                                                   # formula: (input_size - kernel_size + 2*padding)/stride + 1        (1, 28, 28)
+            nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=2, padding=1),  # (28-3+2)/1 + 1 = 28          (16, 28, 28)
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(32, 1, kernel_size=3, padding=1),
-            nn.Sigmoid()
+            #nn.MaxPool2d(kernel_size=2),                                                    # 28/2 = 14                    (16, 14, 14)
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1),            # (14-3+2)/1 + 1 = 14          (32, 14, 14)
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(0.2),
+            #nn.MaxPool2d(kernel_size=2)                                                  # 14/2 = 7                     (32, 7, 7)
         )
 
+        self.decoder = nn.Sequential(                                                                   # formula: (input_size - 1) * stride - 2*padding + dilation * (kernel_size - 1) + output_padding + 1
+            nn.ConvTranspose2d(in_channels=64, out_channels=32, kernel_size=4, stride=2, padding=1),     # (7 - 1) * 2 - 2 + 4 + 0 + 0 = 12      (16, 12, 12)
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(0.2),                                                                      
+            nn.ConvTranspose2d(in_channels=32, out_channels=1, kernel_size=4, stride=2, padding=1),      # (14 - 1) * 2 - 2 + 4 + 0 + 0 = 28     (1, 28, 28)
+            nn.Sigmoid()
+            #nn.Upsample(scale_factor=2, mode='nearest'),
+            #nn.Conv2d(32, 16, kernel_size=3, padding=1),
+            #nn.Upsample(scale_factor=2, mode='nearest'),
+            #nn.Conv2d(16, 1, kernel_size=3, padding=1)
+        )
 
     def forward(self, x):
         """
@@ -237,18 +230,9 @@ class Model(nn.Module):
         #x = F.relu(x)
 
         # added stuff
-        orig = x.clone()
-
-        e1 = self.encoder1(x)
-        e2 = self.encoder2(e1)
-
-        d1 = self.up1(e2)
-        d1 = torch.cat([d1, e1], dim=1)
-        d1 = self.dec1(d1)
-
-        d2 = self.up2(d1)
-        d2 = torch.cat([d2, orig], dim=1)
-        x = self.dec2(d2)
+        #x = x.view(-1, 1, 28, 28)
+        x= self.encoder(x)
+        x = self.decoder(x)
 
         # Reshape the image to the original shape
         x = x.view(x.shape[0], 1, 28, 28)
