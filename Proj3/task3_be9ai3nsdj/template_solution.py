@@ -80,8 +80,8 @@ def load_data(**kwargs):
     train_data_label = train_data[:, :, :, :]   # clean image is the lable
     
 
-    train_data_input = train_data_input.float()/255
-    train_data_label = train_data_label.float()/255
+    #train_data_input = train_data_input.float()/255
+    #train_data_label = train_data_label.float()/255
 
     # Visualize the training data if needed
     # Set to False if you don't want to save the images
@@ -129,7 +129,7 @@ def training(train_data_input, train_data_label, **kwargs):
 
     # TODO: Dummy optimizer - change this to a more suitable optimizer
     # optimizer = torch.optim.SGD(model.parameters())
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0003, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.5)
 
@@ -149,7 +149,7 @@ def training(train_data_input, train_data_label, **kwargs):
 
     # TODO: The value of n_epochs is just a placeholder and likely needs to be
     # changed
-    n_epochs = 30
+    n_epochs = 10
 
     for epoch in range(n_epochs):
         # added stuff
@@ -219,7 +219,7 @@ class Model(nn.Module):
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2),
             nn.Conv2d(32, 1, kernel_size=3, padding=1),
-            nn.Sigmoid()
+            #nn.Sigmoid()
         )
 
 
