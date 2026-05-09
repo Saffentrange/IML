@@ -131,7 +131,7 @@ def training(train_data_input, train_data_label, **kwargs):
     # optimizer = torch.optim.SGD(model.parameters())
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.5)
+    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.5)
 
     # TODO: Correctly setup the dataloader - the below is just a placeholder
     # Also consider that you might not want to use the entire dataset for
@@ -149,11 +149,11 @@ def training(train_data_input, train_data_label, **kwargs):
 
     # TODO: The value of n_epochs is just a placeholder and likely needs to be
     # changed
-    n_epochs = 10
+    n_epochs = 30
 
     for epoch in range(n_epochs):
         # added stuff
-        epoch_loss = 0
+        #epoch_loss = 0
 
         for x, y in tqdm(
             data_loader, desc=f"Training Epoch {epoch}", leave=False
@@ -166,11 +166,11 @@ def training(train_data_input, train_data_label, **kwargs):
             optimizer.step()
 
             # added stuff
-            epoch_loss += loss.item()
+            #epoch_loss += loss.item()
 
         # added stuff
-        avg_loss = epoch_loss / len(data_loader)
-        scheduler.step(avg_loss)
+        #avg_loss = epoch_loss / len(data_loader)
+        #scheduler.step(avg_loss)
 
         print(f"Epoch {epoch} loss: {loss.item()}")
 
