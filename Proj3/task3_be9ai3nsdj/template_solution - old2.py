@@ -124,12 +124,12 @@ def training(train_data_input, train_data_label, **kwargs):
     # TODO: Dummy criterion - change this to the correct loss function
     # https://pytorch.org/docs/stable/nn.html#loss-functions
     # criterion = lambda x, y: torch.mean((x))
-    criterion = nn.MSELoss()
-    # criterion = nn.BCELoss()
+    #criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
 
     # TODO: Dummy optimizer - change this to a more suitable optimizer
     # optimizer = torch.optim.SGD(model.parameters())
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-6)
 
     #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.5)
 
@@ -149,7 +149,7 @@ def training(train_data_input, train_data_label, **kwargs):
 
     # TODO: The value of n_epochs is just a placeholder and likely needs to be
     # changed
-    n_epochs = 30
+    n_epochs = 60
 
     for epoch in range(n_epochs):
         # added stuff
@@ -193,20 +193,35 @@ class Model(nn.Module):
     
         # added stuff
         self.encoder1 = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1, stride=2),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2),
-            nn.MaxPool2d(2)
+            #nn.MaxPool2d(2)
         )
 
         self.encoder2 = nn.Sequential(
-            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1, stride=2),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2),
-            nn.MaxPool2d(2)
+            #nn.MaxPool2d(2)
         )
 
+ 
+        """ self.encoder3 = nn.Sequential(
+            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3),
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.2)
+        )
+
+        self.up0 = nn.Upsample(size=(7, 7), mode='bilinear', align_corners=True)
+        self.dec0 = nn.Sequential(
+            nn.Conv2d(in_channels=384, out_channels=128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.2)
+        ) """
+
         self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        #self.up1 = nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=2, stride=2)
         self.dec1 = nn.Sequential(
             nn.Conv2d(in_channels=192, out_channels=64, kernel_size=3, padding=1),
             nn.BatchNorm2d(64),
@@ -214,6 +229,7 @@ class Model(nn.Module):
         )
 
         self.up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        #self.up2 = nn.ConvTranspose2d(in_channels=64, out_channels=1, kernel_size=2, stride=2)
         self.dec2 = nn.Sequential(
             nn.Conv2d(in_channels=65, out_channels=32, kernel_size=3, padding=1),
             nn.BatchNorm2d(32),
@@ -241,6 +257,14 @@ class Model(nn.Module):
 
         e1 = self.encoder1(x)
         e2 = self.encoder2(e1)
+
+        """
+        e3 = self.encoder3(e2)
+
+        d0 = self.up0(e3)
+        d0 = torch.cat([d0, e2], dim=1)
+        d0 = self.dec0(d0)
+        """
 
         d1 = self.up1(e2)
         d1 = torch.cat([d1, e1], dim=1)
