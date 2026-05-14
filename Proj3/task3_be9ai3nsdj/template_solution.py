@@ -78,10 +78,6 @@ def load_data(**kwargs):
     train_data_input = train_data.clone()
     train_data_input[:, :, 10:18, 10:18] = 0  # masked image is the input
     train_data_label = train_data[:, :, :, :]   # clean image is the lable
-    
-
-    #train_data_input = train_data_input.float()/255
-    #train_data_label = train_data_label.float()/255
 
     # Visualize the training data if needed
     # Set to False if you don't want to save the images
@@ -123,15 +119,10 @@ def training(train_data_input, train_data_label, **kwargs):
 
     # TODO: Dummy criterion - change this to the correct loss function
     # https://pytorch.org/docs/stable/nn.html#loss-functions
-    # criterion = lambda x, y: torch.mean((x))
     criterion = nn.MSELoss()
-    # criterion = nn.BCELoss()
 
     # TODO: Dummy optimizer - change this to a more suitable optimizer
-    # optimizer = torch.optim.SGD(model.parameters())
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
-
-    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.5)
 
     # TODO: Correctly setup the dataloader - the below is just a placeholder
     # Also consider that you might not want to use the entire dataset for
@@ -152,31 +143,15 @@ def training(train_data_input, train_data_label, **kwargs):
     n_epochs = 30
 
     for epoch in range(n_epochs):
-        # added stuff
-        #epoch_loss = 0
-
         for x, y in tqdm(
             data_loader, desc=f"Training Epoch {epoch}", leave=False
         ):
             x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
             output = model(x)
-
-            # added stuff
-            #mask = torch.zeros_like(x)
-            #mask[:, :, 10:18, 10:18] = 1
-            #loss = criterion(output * mask, y*mask)
-
             loss = criterion(output, y)
             loss.backward()
             optimizer.step()
-
-            # added stuff
-            #epoch_loss += loss.item()
-
-        # added stuff
-        #avg_loss = epoch_loss / len(data_loader)
-        #scheduler.step(avg_loss)
 
         print(f"Epoch {epoch} loss: {loss.item()}")
 
@@ -195,7 +170,6 @@ class Model(nn.Module):
         The constructor of the model.
         """
         super().__init__()
-        #self.fc = nn.Linear(784, 784)
     
         # added stuff
         self.encoder1 = nn.Sequential(
@@ -254,26 +228,6 @@ class Model(nn.Module):
         )
 
 
-
-        """
-        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.dec1 = nn.Sequential(
-            nn.Conv2d(in_channels=192, out_channels=64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.2)
-        )
-
-        self.up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.dec2 = nn.Sequential(
-            nn.Conv2d(in_channels=65, out_channels=32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(32, 1, kernel_size=3, padding=1),
-            #nn.Sigmoid()
-        )
-        """
-
-
     def forward(self, x):
         """
         The forward pass of the model.
@@ -282,27 +236,8 @@ class Model(nn.Module):
 
         output: x: torch.Tensor, the output of the model
         """
-        # Flatten the image in the last two dimensions
-        #x = x.view(x.shape[0], -1)
-        #x = self.fc(x)
-        #x = F.relu(x)
-
+        
         # added stuff
-        """
-        orig = x.clone()
-
-        e1 = self.encoder1(x)
-        e2 = self.encoder2(e1)
-
-        d1 = self.up1(e2)
-        d1 = torch.cat([d1, e1], dim=1)
-        d1 = self.dec1(d1)
-
-        d2 = self.up2(d1)
-        d2 = torch.cat([d2, orig], dim=1)
-        x = self.dec2(d2)
-        """
-
         e1 = self.encoder1(x)
         e2 = self.encoder2(self.pool(e1))
         e3 = self.encoder3(self.pool(e2))
